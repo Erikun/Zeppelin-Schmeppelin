@@ -19,6 +19,9 @@ FRAMES_PER_SECOND = 30
 TURNTIME = 3  # s
 
 class Airship(object):
+    """
+    A class to describe an airship
+    """
     def __init__(self, image, shadowimage, position=Vector(0,0), heading=0, speed=30, rotation=0):
         self.image = pygame.image.load(image)
         self.shadowimage = pygame.image.load(shadowimage)
@@ -52,14 +55,33 @@ class Airship(object):
     def set_rotation(self, newrotation):
         self.rotation = max(math.radians(-25), min(newrotation, math.radians(25)))
 
+class Map(object):
+    def __init__(self, image, position=Vector(0,0)):
+        self.tile = pygame.image.load(image)
+        self.position = position
+        self.surface = pygame.Surface((self.tile.get_width()*5,
+                                      self.tile.get_height()*5))
+        self.position = Vector((self.tile.get_width()*5,
+                                self.tile.get_height()*5))/2
+        for x in range(5):
+            for y in range(5):
+                print self.surface.blit(self.tile, (x*self.tile.get_width(),
+                                              y*self.tile.get_height()))
+
+
 
 airship = Airship('airship.png', 'shadow.png')
+map = Map("forest.png")
+
+def draw_background(map):
+    screen.blit(map.surface, (0,0),
+                pygame.Rect(map.position.x - SWIDTH//2, map.position.y-SHEIGHT//2,
+                            SWIDTH, SHEIGHT))
 
 def draw_all(screen, ships, blips):
     # draw everything
-    screen.fill(GREEN)
-
-    #screen.
+    #screen.fill(GREEN)
+    draw_background(map)
 
     for ship in ships:
         #airship.angle += 1
@@ -68,7 +90,7 @@ def draw_all(screen, ships, blips):
         screen.blit(airship_surf[1], (mapcenter+airship.position-img_size+Vector(20,20)).tuple())
         screen.blit(airship_surf[0], (mapcenter+airship.position-img_size).tuple())
 
-        for b in blips:
+        for i, b in enumerate(blips):
             blip_pos = (mapcenter+b)
             gfxdraw.filled_circle(screen, blip_pos.x, blip_pos.y, 3, (255,0,0))
 
@@ -117,12 +139,9 @@ while 1:
         elif mouseangle < -math.pi:
             mouseangle = math.pi*2 + mouseangle
 
-        if mouseangle > math.pi:
-            mouseangle -= 2*math.pi
-
         print mousedist , mouseangle
         draw_all(screen, [airship], blips)
-        pygame.draw.line(screen, (0,0,0),
+        pygame.draw.line(screen, (0,100,255),
                          (mapcenter+airship.position).tuple(),
                          (mapcenter+airship.position+mousedir/mousedist*airship.speed).tuple(),
                          7)
