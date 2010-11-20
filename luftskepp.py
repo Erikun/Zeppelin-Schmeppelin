@@ -89,6 +89,7 @@ while 1:
         mapcenter = mapcenter - delta_pos/20
 
     while not clicked:
+        clock.tick(FRAMES_PER_SECOND)
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONDOWN:
                 clicked = True
