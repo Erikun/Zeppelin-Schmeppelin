@@ -2,6 +2,7 @@ from __future__ import division
 
 import pygame, time, math
 from pygame.locals import *
+from pygame import gfxdraw
 from vector import Vector
 from random import random
 
@@ -58,6 +59,8 @@ def draw_all(screen, ships, blips):
     # draw everything
     screen.fill(GREEN)
 
+    #screen.
+
     for ship in ships:
         #airship.angle += 1
         airship_surf = ship.get_surface()
@@ -66,7 +69,8 @@ def draw_all(screen, ships, blips):
         screen.blit(airship_surf[0], (mapcenter+airship.position-img_size).tuple())
 
         for b in blips:
-            pygame.draw.circle(screen, (255,0,0), (mapcenter+b).tuple(), 3)
+            blip_pos = (mapcenter+b)
+            gfxdraw.filled_circle(screen, blip_pos.x, blip_pos.y, 3, (255,0,0))
 
         pygame.display.flip()
         #print airship_rot.
@@ -81,13 +85,18 @@ while 1:
     # print "Input your desired turn [-5..5]:",
     # airship.rotation = input()
 
+    # Scroll to center the airship
+    # for i in xrange(20):
+    #     clock.tick(FRAMES_PER_SECOND)
+    #     #draw_all(screen, [airship], blips)
+    #     #mapcenter = mapcenter - delta_pos/20
+    #     screen.scroll((-delta_pos/20).x, (-delta_pos/20).y)
+    #     pygame.display.flip()
+    # mapcenter -= delta_pos
+
+
+    # This is the user input loop
     clicked = False
-
-    for i in xrange(20):
-        clock.tick(FRAMES_PER_SECOND)
-        draw_all(screen, [airship], blips)
-        mapcenter = mapcenter - delta_pos/20
-
     while not clicked:
         clock.tick(FRAMES_PER_SECOND)
         for event in pygame.event.get():
@@ -127,10 +136,10 @@ while 1:
     airship.acceleration = max(-10, min(10, (mousedist-airship.speed)/20))
     print airship.acceleration, airship.rotation
 
-    #print mousedir, mouseangle
+
+    # And here is the "realtime" part
 
     blips = []
-
     orig_pos = airship.position
     for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
         airship.update(1./FRAMES_PER_SECOND*TURNTIME)
