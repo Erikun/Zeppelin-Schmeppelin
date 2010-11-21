@@ -160,7 +160,12 @@ while 1:
 
     blips = []
     orig_pos = airship.position
-    for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
+    #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
+    i=t=0
+    clicked = False
+    while not clicked:
+        t += 1/FRAMES_PER_SECOND
+        i += 1
         airship.update(1./FRAMES_PER_SECOND*TURNTIME)
 
         # let's move the ship
@@ -172,6 +177,10 @@ while 1:
 
         clock.tick(FRAMES_PER_SECOND)
         draw_all(screen, [airship], blips)
+
+        for event in pygame.event.get():
+            if event.type == MOUSEBUTTONDOWN:
+                clicked = True
 
     delta_pos = airship.position - orig_pos
 
