@@ -6,6 +6,7 @@ from pygame import gfxdraw
 from vector import Vector
 from random import random
 
+pygame.init()
 
 SWIDTH, SHEIGHT = 1024, 768
 screen = pygame.display.set_mode((SWIDTH, SHEIGHT), DOUBLEBUF)
@@ -22,13 +23,17 @@ class Airship(object):
     """
     A class to describe an airship
     """
-    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0, speed=30, rotation=0):
+    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0, speed=30, acceleration=0, rotation=0):
         self.image = pygame.image.load(image)
         self.shadowimage = pygame.image.load(shadowimage)
         self.position = position
         self.heading = heading
         self.speed = speed
+        self.acceleration = acceleration
         self.rotation = rotation
+        self.max_speed_forwards = 100
+        self.max_speed_backwards = -50
+
 
     def get_surface(self):
         return (pygame.transform.rotozoom(self.image, math.degrees(self.heading), SCALE),
@@ -40,7 +45,8 @@ class Airship(object):
                       -math.sin(self.heading))
 
     def update(self, t):
-        self.speed += self.acceleration*t
+        self.speed = max(self.max_speed_backwards,
+                         min(self.max_speed_forwards, self.speed+self.acceleration*t))
 
     def move(self, t):
         direction = self.get_direction_vector()
@@ -65,7 +71,7 @@ class Map(object):
                                 self.tile.get_height()*5))/2
         for x in range(5):
             for y in range(5):
-                print self.surface.blit(self.tile, (x*self.tile.get_width(),
+                self.surface.blit(self.tile, (x*self.tile.get_width(),
                                               y*self.tile.get_height()))
 
 
@@ -77,6 +83,8 @@ def draw_background(map):
     screen.blit(map.surface, (0,0),
                 pygame.Rect(map.position.x - SWIDTH//2, map.position.y-SHEIGHT//2,
                             SWIDTH, SHEIGHT))
+
+font = pygame.font.Font(None, 36)
 
 def draw_all(screen, ships, blips):
     # draw everything
@@ -93,6 +101,10 @@ def draw_all(screen, ships, blips):
         for i, b in enumerate(blips):
             blip_pos = (mapcenter+b)
             gfxdraw.filled_circle(screen, blip_pos.x, blip_pos.y, 3, (255,0,0))
+
+        text = font.render("Speed: %.2f Acc:%.2f Turn:%.2f"%(ship.speed, ship.acceleration, math.degrees(ship.rotation)), 1, (255,255,255))
+
+        screen.blit(text, (5,5))
 
         pygame.display.flip()
         #print airship_rot.
@@ -172,7 +184,7 @@ while 1:
         airship.move(1./(FRAMES_PER_SECOND*TURNTIME))
         airship.turn(1./(FRAMES_PER_SECOND*TURNTIME))
 
-        if i%10 == 0:
+        if i%30 == 0:
             blips.append(airship.position)
 
         clock.tick(FRAMES_PER_SECOND)
