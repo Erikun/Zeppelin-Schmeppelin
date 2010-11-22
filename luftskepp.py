@@ -2,7 +2,7 @@ from __future__ import division
 
 import pygame, time, math
 from pygame.locals import *
-from pygame import gfxdraw
+from pygame import gfxdraw, Rect
 from vector import Vector
 from random import random
 
@@ -62,27 +62,38 @@ class Airship(object):
         self.rotation = max(math.radians(-25), min(newrotation, math.radians(25)))
 
 class Map(object):
-    def __init__(self, image, position=Vector(0,0)):
+    def __init__(self, image, position=None, ships=[]):
         self.tile = pygame.image.load(image)
-        self.position = position
+        self.position = position    # where is the center of the screen?
         self.surface = pygame.Surface((self.tile.get_width()*5,
                                       self.tile.get_height()*5))
-        self.position = Vector((self.tile.get_width()*5,
-                                self.tile.get_height()*5))/2
+        # Init the map background
         for x in range(5):
             for y in range(5):
                 self.surface.blit(self.tile, (x*self.tile.get_width(),
                                               y*self.tile.get_height()))
+        self.ships = ships
+        if position is None:
+            self.position = Vector(self.surface.get_width(),
+                                    self.surface.get_height())/2
+        else:
+            self.position = position
 
+
+    def get_visible_rect(self):
+        return pygame.Rect(self.position.x-SWIDTH//2,
+                           self.position.y-SHEIGHT//2,
+                           SWIDTH, SHEIGHT)
+
+    def get_visible_surface(self):
+        return self.surface.subsurface(self.get_visible_rect())
 
 
 airship = Airship('airship.png', 'shadow.png')
 map = Map("forest.png")
 
 def draw_background(map):
-    screen.blit(map.surface, (0,0),
-                pygame.Rect(map.position.x - SWIDTH//2, map.position.y-SHEIGHT//2,
-                            SWIDTH, SHEIGHT))
+    screen.blit(map.get_visible_surface(), dest=(0,0))
 
 font = pygame.font.Font(None, 36)
 
@@ -176,8 +187,6 @@ while 1:
     i=t=0
     clicked = False
     while not clicked:
-        t += 1/FRAMES_PER_SECOND
-        i += 1
         airship.update(1./FRAMES_PER_SECOND*TURNTIME)
 
         # let's move the ship
@@ -193,6 +202,9 @@ while 1:
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONDOWN:
                 clicked = True
+        #map.position += Vector(0,1)
+        i += 1
+        t += 1/FRAMES_PER_SECOND
 
     delta_pos = airship.position - orig_pos
 
