@@ -39,6 +39,9 @@ class Airship(object):
         return (pygame.transform.rotozoom(self.image, math.degrees(self.heading), SCALE),
                 pygame.transform.rotozoom(self.shadowimage, math.degrees(self.heading), SCALE))
 
+#    def get_surface_size(self):
+#        return Vector(self.image.get_width(), self.image.get_height())
+
 
     def get_direction_vector(self):
         return Vector(math.cos(self.heading),
@@ -64,7 +67,7 @@ class Airship(object):
 class Map(object):
     def __init__(self, image, position=None, ships=[]):
         self.tile = pygame.image.load(image)
-        self.position = position    # where is the center of the screen?
+        #self.position = position    # where is the center of the screen?
         self.surface = pygame.Surface((self.tile.get_width()*5,
                                       self.tile.get_height()*5))
         # Init the map background
@@ -88,9 +91,12 @@ class Map(object):
     def get_visible_surface(self):
         return self.surface.subsurface(self.get_visible_rect())
 
+    def get_screen_coords(self, mapcoords):
+        return (mapcoords-self.position+Vector(SWIDTH//2,SHEIGHT//2))
 
-airship = Airship('airship.png', 'shadow.png')
 map = Map("forest.png")
+airship = Airship('airship.png', 'shadow.png', position=map.position)
+
 
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
@@ -105,15 +111,19 @@ def draw_all(screen, ships, blips):
     for ship in ships:
         #airship.angle += 1
         airship_surf = ship.get_surface()
-        img_size = Vector(airship_surf[0].get_width()//2, airship_surf[0].get_height()//2)
-        screen.blit(airship_surf[1], (mapcenter+airship.position-img_size+Vector(20,20)).tuple())
-        screen.blit(airship_surf[0], (mapcenter+airship.position-img_size).tuple())
+        #img_size = airship.get_surface_size()
+        img_size = Vector(airship_surf[0].get_width(),
+                          airship_surf[0].get_height())
+        print img_size
+        print "map_coords:", map.get_screen_coords(airship.position)
+        screen.blit(airship_surf[1], (map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
+        screen.blit(airship_surf[0], (map.get_screen_coords(airship.position)-img_size/2).tuple())
 
         for i, b in enumerate(blips):
             blip_pos = (mapcenter+b)
             gfxdraw.filled_circle(screen, blip_pos.x, blip_pos.y, 3, (255,0,0))
 
-        text = font.render("Speed: %.2f Acc:%.2f Turn:%.2f"%(ship.speed, ship.acceleration, math.degrees(ship.rotation)), 1, (255,255,255))
+        text = font.render("Speed: %.2f Acc:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.speed, ship.acceleration, math.degrees(ship.rotation), ship.position.x, ship.position.y), 1, (255,255,255))
 
         screen.blit(text, (5,5))
 
@@ -150,7 +160,8 @@ while 1:
 
         mousepos = Vector(pygame.mouse.get_pos())
         #print mousepos
-        mousedir = mousepos - airship.position - mapcenter
+        airship_screenpos = map.get_screen_coords(airship.position)
+        mousedir = mousepos - airship_screenpos
         mousedist = math.sqrt(mousedir.x**2 + mousedir.y**2)
         mouseangle = math.acos(mousedir.x/mousedist)
         if mousedir.y > 0:
@@ -165,11 +176,11 @@ while 1:
         print mousedist , mouseangle
         draw_all(screen, [airship], blips)
         pygame.draw.line(screen, (0,100,255),
-                         (mapcenter+airship.position).tuple(),
-                         (mapcenter+airship.position+mousedir/mousedist*airship.speed).tuple(),
+                         airship_screenpos.tuple(),
+                         (airship_screenpos+mousedir/mousedist*airship.speed).tuple(),
                          7)
         pygame.draw.line(screen, (255,0,0),
-                         (mapcenter+airship.position).tuple(),
+                         airship_screenpos.tuple(),
                          mousepos.tuple(), 3)
 
         pygame.display.flip()
@@ -203,6 +214,19 @@ while 1:
             if event.type == MOUSEBUTTONDOWN:
                 clicked = True
         #map.position += Vector(0,1)
+
+        ship_screen_pos = airship.position - map.position
+        print "ship_screen_pos:", ship_screen_pos
+        d = 0.3
+        # if ship_screen_pos.x > SWIDTH * d:
+        #     map.position -= ship_screen_pos - Vector(SWIDTH*d, 0)
+        # if ship_screen_pos.x < -(SWIDTH * d):
+        #     map.position += ship_screen_pos + Vector(SWIDTH*d, 0)
+        # if ship_screen_pos.y > SHEIGHT * d:
+        #     map.position -= ship_screen_pos - Vector(0, SHEIGHT*d)
+        # if ship_screen_pos.x < -(SHEIGHT * d):
+        #     map.position += ship_screen_pos + Vector(0, SHEIGHT*d)
+
         i += 1
         t += 1/FRAMES_PER_SECOND
 
