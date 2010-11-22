@@ -218,14 +218,14 @@ while 1:
         ship_screen_pos = airship.position - map.position
         print "ship_screen_pos:", ship_screen_pos
         d = 0.3
-        # if ship_screen_pos.x > SWIDTH * d:
-        #     map.position -= ship_screen_pos - Vector(SWIDTH*d, 0)
-        # if ship_screen_pos.x < -(SWIDTH * d):
-        #     map.position += ship_screen_pos + Vector(SWIDTH*d, 0)
-        # if ship_screen_pos.y > SHEIGHT * d:
-        #     map.position -= ship_screen_pos - Vector(0, SHEIGHT*d)
-        # if ship_screen_pos.x < -(SHEIGHT * d):
-        #     map.position += ship_screen_pos + Vector(0, SHEIGHT*d)
+        if ship_screen_pos.x > SWIDTH * d:
+            map.position += ship_screen_pos - Vector(SWIDTH*d, ship_screen_pos.y)
+        if ship_screen_pos.x < -(SWIDTH * d):
+            map.position -= ship_screen_pos + Vector(SWIDTH*d, ship_screen_pos.y)
+        if ship_screen_pos.y > SHEIGHT * d:
+            map.position += ship_screen_pos - Vector(ship_screen_pos.x, SHEIGHT*d)
+        if ship_screen_pos.x < -(SHEIGHT * d):
+            map.position -= ship_screen_pos + Vector(ship_screen_pos.x, SHEIGHT*d)
 
         i += 1
         t += 1/FRAMES_PER_SECOND
