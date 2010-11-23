@@ -65,14 +65,14 @@ class Airship(object):
         self.rotation = max(math.radians(-25), min(newrotation, math.radians(25)))
 
 class Map(object):
-    def __init__(self, image, position=None, ships=[]):
+    def __init__(self, image, duplication=(1,1), position=None, ships=[]):
         self.tile = pygame.image.load(image)
         #self.position = position    # where is the center of the screen?
-        self.surface = pygame.Surface((self.tile.get_width()*5,
-                                      self.tile.get_height()*5))
+        self.surface = pygame.Surface((self.tile.get_width()*duplication[0],
+                                      self.tile.get_height()*duplication[1]))
         # Init the map background
-        for x in range(5):
-            for y in range(5):
+        for x in range(duplication[0]):
+            for y in range(duplication[1]):
                 self.surface.blit(self.tile, (x*self.tile.get_width(),
                                               y*self.tile.get_height()))
         self.ships = ships
@@ -94,7 +94,7 @@ class Map(object):
     def get_screen_coords(self, mapcoords):
         return (mapcoords-self.position+Vector(SWIDTH//2,SHEIGHT//2))
 
-map = Map("forest.png")
+map = Map("dublin.jpg", (1,1))
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 
 
@@ -148,7 +148,8 @@ while 1:
     #     screen.scroll((-delta_pos/20).x, (-delta_pos/20).y)
     #     pygame.display.flip()
     # mapcenter -= delta_pos
-
+    ship_screen_pos = map.get_screen_coords(airship.position)
+    print "ship_screen_pos:", ship_screen_pos
 
     # This is the user input loop
     clicked = False
@@ -215,17 +216,21 @@ while 1:
                 clicked = True
         #map.position += Vector(0,1)
 
-        ship_screen_pos = airship.position - map.position
+        ship_screen_pos = map.get_screen_coords(airship.position)
         print "ship_screen_pos:", ship_screen_pos
         d = 0.3
-        if ship_screen_pos.x > SWIDTH * d:
-            map.position += ship_screen_pos - Vector(SWIDTH*d, ship_screen_pos.y)
-        if ship_screen_pos.x < -(SWIDTH * d):
-            map.position -= ship_screen_pos + Vector(SWIDTH*d, ship_screen_pos.y)
-        if ship_screen_pos.y > SHEIGHT * d:
-            map.position += ship_screen_pos - Vector(ship_screen_pos.x, SHEIGHT*d)
-        if ship_screen_pos.x < -(SHEIGHT * d):
-            map.position -= ship_screen_pos + Vector(ship_screen_pos.x, SHEIGHT*d)
+        if ship_screen_pos.x > SWIDTH - SWIDTH*d:
+            print "X+"
+            map.position.x += ship_screen_pos.x - (SWIDTH - SWIDTH*d)
+        if ship_screen_pos.x < SWIDTH * d:
+            print "X-"
+            map.position.x += ship_screen_pos.x - SWIDTH * d
+        if ship_screen_pos.y > SHEIGHT - SHEIGHT * d:
+            print "Y+"
+            map.position.y += ship_screen_pos.y - (SHEIGHT - SHEIGHT * d)
+        if ship_screen_pos.y < SHEIGHT * d:
+            print "Y-"
+            map.position.y += ship_screen_pos.y - SHEIGHT * d
 
         i += 1
         t += 1/FRAMES_PER_SECOND
