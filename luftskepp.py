@@ -120,8 +120,8 @@ def draw_all(screen, ships, blips):
         screen.blit(airship_surf[0], (map.get_screen_coords(airship.position)-img_size/2).tuple())
 
         for i, b in enumerate(blips):
-            blip_pos = (mapcenter+b)
-            gfxdraw.filled_circle(screen, blip_pos.x, blip_pos.y, 3, (255,0,0))
+            blip_pos = map.get_screen_coords(b)
+            pygame.draw.circle(screen, (255,0,0), blip_pos.tuple(), 3)
 
         text = font.render("Speed: %.2f Acc:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.speed, ship.acceleration, math.degrees(ship.rotation), ship.position.x, ship.position.y), 1, (255,255,255))
 
@@ -203,7 +203,9 @@ while 1:
 
         # let's move the ship
         airship.move(1./(FRAMES_PER_SECOND*TURNTIME))
+        # ...and turn it
         airship.turn(1./(FRAMES_PER_SECOND*TURNTIME))
+
 
         if i%30 == 0:
             blips.append(airship.position)
@@ -215,7 +217,6 @@ while 1:
             if event.type == MOUSEBUTTONDOWN:
                 clicked = True
         #map.position += Vector(0,1)
-
         ship_screen_pos = map.get_screen_coords(airship.position)
         print "ship_screen_pos:", ship_screen_pos
         d = 0.3
