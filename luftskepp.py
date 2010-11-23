@@ -103,7 +103,7 @@ def draw_background(map):
 
 font = pygame.font.Font(None, 36)
 
-def draw_all(screen, ships, blips):
+def draw_all(screen, ships, blips, flip=True):
     # draw everything
     #screen.fill(GREEN)
     draw_background(map)
@@ -126,13 +126,13 @@ def draw_all(screen, ships, blips):
         text = font.render("Speed: %.2f Acc:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.speed, ship.acceleration, math.degrees(ship.rotation), ship.position.x, ship.position.y), 1, (255,255,255))
 
         screen.blit(text, (5,5))
-
-        pygame.display.flip()
+        if flip:
+            pygame.display.flip()
         #print airship_rot.
 
 blips = []
 mapcenter = MAP_CENTER
-delta_pos = Vector(0,0)
+#delta_pos = Vector(0,0)
 
 while 1:
     # print "Input your desired speed [0..10]:",
@@ -140,27 +140,22 @@ while 1:
     # print "Input your desired turn [-5..5]:",
     # airship.rotation = input()
 
-    # Scroll to center the airship
-    # for i in xrange(20):
-    #     clock.tick(FRAMES_PER_SECOND)
-    #     #draw_all(screen, [airship], blips)
-    #     #mapcenter = mapcenter - delta_pos/20
-    #     screen.scroll((-delta_pos/20).x, (-delta_pos/20).y)
-    #     pygame.display.flip()
-    # mapcenter -= delta_pos
-    ship_screen_pos = map.get_screen_coords(airship.position)
-    print "ship_screen_pos:", ship_screen_pos
+    #ship_screen_pos = map.get_screen_coords(airship.position)
+    #print "ship_screen_pos:", ship_screen_pos
 
-    # This is the user input loop
+    #### This is the user input loop
     clicked = False
     while not clicked:
+        # we want a capped framerate to prevent flicker and CPU overheating...
         clock.tick(FRAMES_PER_SECOND)
+
+        # check for mouse clicks
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONDOWN:
                 clicked = True
 
+        # Figure out where the user clicked in relation to the ship
         mousepos = Vector(pygame.mouse.get_pos())
-        #print mousepos
         airship_screenpos = map.get_screen_coords(airship.position)
         mousedir = mousepos - airship_screenpos
         mousedist = math.sqrt(mousedir.x**2 + mousedir.y**2)
@@ -175,7 +170,9 @@ while 1:
             mouseangle = math.pi*2 + mouseangle
 
         print mousedist , mouseangle
-        draw_all(screen, [airship], blips)
+
+        draw_all(screen, [airship], blips, flip=False)
+
         pygame.draw.line(screen, (0,100,255),
                          airship_screenpos.tuple(),
                          (airship_screenpos+mousedir/mousedist*airship.speed).tuple(),
@@ -190,8 +187,7 @@ while 1:
     airship.acceleration = max(-10, min(10, (mousedist-airship.speed)/20))
     print airship.acceleration, airship.rotation
 
-
-    # And here is the "realtime" part
+    #### And below is the "realtime" part
 
     blips = []
     orig_pos = airship.position
@@ -206,17 +202,11 @@ while 1:
         # ...and turn it
         airship.turn(1./(FRAMES_PER_SECOND*TURNTIME))
 
-
-        if i%30 == 0:
+        # add some markers each second, to show the ships movement
+        if i%FRAMES_PER_SECOND == 0:
             blips.append(airship.position)
 
-        clock.tick(FRAMES_PER_SECOND)
-        draw_all(screen, [airship], blips)
-
-        for event in pygame.event.get():
-            if event.type == MOUSEBUTTONDOWN:
-                clicked = True
-        #map.position += Vector(0,1)
+        # check if we need to scroll the background
         ship_screen_pos = map.get_screen_coords(airship.position)
         print "ship_screen_pos:", ship_screen_pos
         d = 0.3
@@ -233,8 +223,19 @@ while 1:
             print "Y-"
             map.position.y += ship_screen_pos.y - SHEIGHT * d
 
+        # update the screen
+        draw_all(screen, [airship], blips)
+
+        # move the time forward by one "tick"
         i += 1
+        clock.tick(FRAMES_PER_SECOND)
         t += 1/FRAMES_PER_SECOND
 
-    delta_pos = airship.position - orig_pos
+        # Check if the user has clicked a mousebutton...
+        for event in pygame.event.get():
+            if event.type == MOUSEBUTTONDOWN:
+                clicked = True
+
+
+    #delta_pos = airship.position - orig_pos
 
