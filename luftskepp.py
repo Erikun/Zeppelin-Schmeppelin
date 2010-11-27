@@ -32,25 +32,35 @@ class Airship(object):
     """
     A class to describe an airship
     """
-    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0, speed=0, acceleration=0, rotation=0):
+    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0,
+                 airspeed=0, acceleration=0, angular_freq=0, motor=0, torque=0):
         self.image = pygame.image.load(image)
         self.shadowimage = pygame.image.load(shadowimage)
         self.position = position
-        self.heading = heading
-        self.speed = speed
-        self.acceleration = acceleration
-        self.rotation = rotation
-        self.max_speed_forwards = 30
-        self.max_speed_backwards = -10
-        self.max_rotation = 10
+        self.heading = heading       # rad
+        self.airspeed = airspeed     # m/s
+        #self.acceleration = acceleration
+        self.mass = 10000.0   # kg
+        self.moment_of_inertia = 1000   # Nms**2
+        self.angular_freq = angular_freq   # rad/s
+        self.motor_force = motor       # N
+        self.torque = torque     # Nm
+        self.max_motor_force_forwards = 30000
+        self.max_motor_force_backwards = -10000
+        #self.max_rotation = 10     # degrees/s
+        self.max_torque = 50  # absolute
+        self.air_drag = 1000   # Ns/m
+        self.turn_drag = 200   #
         self.orders = []
 
     def get_surface(self):
         """
         Create a surface containing the scaled and rotated ship + shadow
         """
-        return (pygame.transform.rotozoom(self.image, math.degrees(self.heading), SCALE),
-                pygame.transform.rotozoom(self.shadowimage, math.degrees(self.heading), SCALE))
+        return (pygame.transform.rotozoom(self.image,
+                                          math.degrees(self.heading), SCALE),
+                pygame.transform.rotozoom(self.shadowimage,
+                                          math.degrees(self.heading), SCALE))
 
 #    def get_surface_size(self):
 #        return Vector(self.image.get_width(), self.image.get_height())
@@ -63,8 +73,8 @@ class Airship(object):
         if len(self.orders)>0:
             order = self.orders[0]
             self.orders.remove(order)
-            self. acceleration = order.motor
-            self.rotation = order.turn
+            self.motor_force = order.motor
+            self.torque = order.turn
             return True
         else:
             return False
@@ -75,32 +85,39 @@ class Airship(object):
                       -math.sin(self.heading))
 
     def update(self, t):
-        # Update ship speed using ship's acceleration
-        self.speed = max(self.max_speed_backwards,
-                         min(self.max_speed_forwards, self.speed+self.acceleration*t))
+        force_tot = self.motor_force - self.air_drag*self.airspeed
+        acceleration = force_tot/self.mass
+        torque_tot = self.torque - self.turn_drag*self.angular_freq
+        rot_accel = torque_tot/self.moment_of_inertia
+        print "Acceleration =", acceleration
 
-    def move(self, t):
+        # Update ship speed using ship's acceleration
+        self.airspeed = self.airspeed+acceleration*t
+        self.angular_freq = self.angular_freq+rot_accel*t
+        print "angular_freq:",self.angular_freq
+
+    def move(self, t, wind):
+
         # Move the ship along its heading
         direction = self.get_direction_vector()
-        self.position = self.position + direction*self.speed*t
+        self.position += direction*self.airspeed*t + wind
 
     def turn(self, t):
         # turn the ship according to its rotation
-        self.heading += self.rotation*t
+        self.heading += self.angular_freq*t
 
     def get_position_tuple(self):
         return (self.position.x, self.position.y)
 
-    def set_rotation(self, newrotation):
-        self.rotation = max(math.radians(-self.max_rotation),
-                            min(newrotation, math.radians(self.max_rotation)))
 
 class Map(object):
-    def __init__(self, image, duplication=(1,1), position=None, ships=[]):
+    def __init__(self, image, duplication=(1,1), position=None, ships=[], wind_direction = 0, windspeed=0):
         self.tile = pygame.image.load(image)
         #self.position = position    # where is the center of the screen?
         self.surface = pygame.Surface((self.tile.get_width()*duplication[0],
                                       self.tile.get_height()*duplication[1]))
+        self.wind_direction = wind_direction
+        self.windspeed = windspeed
         # Init the map background
         for x in range(duplication[0]):
             for y in range(duplication[1]):
@@ -125,7 +142,11 @@ class Map(object):
     def get_screen_coords(self, mapcoords):
         return (mapcoords-self.position+Vector(SWIDTH//2,SHEIGHT//2))
 
-map = Map("dublin.jpg", (1,1))
+
+    def get_wind_vector(self):
+        return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
+
+map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 
 
@@ -155,7 +176,7 @@ def draw_all(screen, ships, blips, flip=True):
             colors = [(255,0,0), (0,255,0), (0,0,255)]
             pygame.draw.circle(screen, colors[b[1]-1], blip_pos.tuple(), 3)
 
-        text1 = font.render("Speed: %.2f Acc:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.speed, ship.acceleration, math.degrees(ship.rotation), ship.position.x, ship.position.y), 1, (255,255,255))
+        text1 = font.render("Speed: %.2f Motor:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.airspeed, ship.motor_force, math.degrees(ship.angular_freq), ship.position.x, ship.position.y), 1, (255,255,255))
         text2 = font.render("GAME ROUND:%d, STEP:%d"%(GAME_ROUND, STEP), 1, (255,255,0))
 
         screen.blit(text1, (5,5))
@@ -172,14 +193,17 @@ GAME_ROUND = 0
 while 1:
     GAME_ROUND += 1
 
-    last_motor = airship.acceleration
-    last_turn = math.degrees(airship.rotation)
+    last_motor = airship.motor_force
+    last_turn = airship.torque
 
     for i in range(3):
         print "### GAME ROUND %d ###"%GAME_ROUND
         print "   --- ORDER #%d --- "%(i+1)
-        motor = raw_input("   Motor speed -2..+5 [%f]:"%last_motor)
-        turn = raw_input("   Turn degrees -10..+10 [%f]:"%last_turn)
+        motor = raw_input("   Motor speed, %d..%d [%.2f]:"%(
+                airship.max_motor_force_backwards,
+                airship.max_motor_force_forwards, last_motor))
+        turn = raw_input("   Turn speed, %d..%d [%.2f]:"%(
+                -airship.max_torque, airship.max_torque, last_turn))
 
         # Sanitize input
         if motor == "":
@@ -187,10 +211,11 @@ while 1:
         if turn == "":
             turn = last_turn
         motor, turn = float(motor), float(turn)
-        motor = max(-2, min(5,motor))
-        turn = max(-20, min(20,turn))
+        motor = max(airship.max_motor_force_backwards,
+                    min(motor, airship.max_motor_force_forwards))
+        turn = max(-airship.max_torque, min(airship.max_torque, turn))
 
-        order = Order(math.radians(turn), motor)
+        order = Order(turn, motor)
         airship.give_order(order)
 
         last_motor, last_turn = motor, turn
@@ -253,6 +278,7 @@ while 1:
     clicked = False
 
     STEP = 0
+    map.wind_direction += random()-0.5
 
     while airship.carry_out_order():
         STEP += 1
@@ -261,7 +287,7 @@ while 1:
             airship.update(1./FRAMES_PER_SECOND)
 
             # let's move the ship
-            airship.move(1./FRAMES_PER_SECOND)
+            airship.move(1./FRAMES_PER_SECOND, map.get_wind_vector())
             # ...and turn it
             airship.turn(1./FRAMES_PER_SECOND)
 
