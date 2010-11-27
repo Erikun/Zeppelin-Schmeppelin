@@ -49,8 +49,8 @@ class Airship(object):
         self.max_motor_force_backwards = -10000
         #self.max_rotation = 10     # degrees/s
         self.max_torque = 50  # absolute
-        self.air_drag = 1000
-        self.turn_drag = 200
+        self.air_drag = 1000   # Ns/m
+        self.turn_drag = 200   #
         self.orders = []
 
     def get_surface(self):
@@ -96,11 +96,11 @@ class Airship(object):
         self.angular_freq = self.angular_freq+rot_accel*t
         print "angular_freq:",self.angular_freq
 
-    def move(self, t):
+    def move(self, t, wind):
 
         # Move the ship along its heading
         direction = self.get_direction_vector()
-        self.position = self.position + direction*self.airspeed*t
+        self.position += direction*self.airspeed*t + wind
 
     def turn(self, t):
         # turn the ship according to its rotation
@@ -111,11 +111,13 @@ class Airship(object):
 
 
 class Map(object):
-    def __init__(self, image, duplication=(1,1), position=None, ships=[]):
+    def __init__(self, image, duplication=(1,1), position=None, ships=[], wind_direction = 0, windspeed=0):
         self.tile = pygame.image.load(image)
         #self.position = position    # where is the center of the screen?
         self.surface = pygame.Surface((self.tile.get_width()*duplication[0],
                                       self.tile.get_height()*duplication[1]))
+        self.wind_direction = wind_direction
+        self.windspeed = windspeed
         # Init the map background
         for x in range(duplication[0]):
             for y in range(duplication[1]):
@@ -140,7 +142,11 @@ class Map(object):
     def get_screen_coords(self, mapcoords):
         return (mapcoords-self.position+Vector(SWIDTH//2,SHEIGHT//2))
 
-map = Map("dublin.jpg", (1,1))
+
+    def get_wind_vector(self):
+        return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
+
+map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 
 
@@ -272,6 +278,7 @@ while 1:
     clicked = False
 
     STEP = 0
+    map.wind_direction += random()-0.5
 
     while airship.carry_out_order():
         STEP += 1
@@ -280,7 +287,7 @@ while 1:
             airship.update(1./FRAMES_PER_SECOND)
 
             # let's move the ship
-            airship.move(1./FRAMES_PER_SECOND)
+            airship.move(1./FRAMES_PER_SECOND, map.get_wind_vector())
             # ...and turn it
             airship.turn(1./FRAMES_PER_SECOND)
 
