@@ -146,16 +146,14 @@ class Map(object):
     def get_wind_vector(self):
         return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
 
-map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
-airship = Airship('airship.png', 'shadow.png', position=map.position)
+
 
 
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
 
-font = pygame.font.Font(None, 36)
 
-def draw_all(screen, ships, blips, flip=True):
+def draw_action(screen, ships, blips, flip=True):
     # draw everything
     #screen.fill(GREEN)
     draw_background(map)
@@ -185,6 +183,12 @@ def draw_all(screen, ships, blips, flip=True):
             pygame.display.flip()
         #print airship_rot.
 
+def draw_strategy(justastring):
+    print justastring
+
+map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
+airship = Airship('airship.png', 'shadow.png', position=map.position)
+font = pygame.font.Font(None, 36)
 blips = []
 mapcenter = MAP_CENTER
 #delta_pos = Vector(0,0)
@@ -271,7 +275,7 @@ while 1:
 
     #### And below is the "realtime" part
 
-    blips = []
+    #    blips = []
     orig_pos = airship.position
     #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
     i=t=0
@@ -313,11 +317,13 @@ while 1:
                 map.position.y += ship_screen_pos.y - SHEIGHT * d
 
             # update the screen
-            draw_all(screen, [airship], blips)
+            draw_action(screen, [airship], blips)
 
             # move the time forward by one "tick"
             clock.tick(FRAMES_PER_SECOND)
             t += 1/FRAMES_PER_SECOND
+            if STEP == 3 and i == 89:
+                draw_strategy('the end')
 
             # Check if the user has clicked a mousebutton...
             # for event in pygame.event.get():
