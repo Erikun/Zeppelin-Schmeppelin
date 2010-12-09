@@ -154,7 +154,7 @@ def draw_background(map):
 
 
 def draw_action(screen, ships, blips, flip=True):
-    # draw everything
+    # draw movement and action phase
     #screen.fill(GREEN)
     draw_background(map)
 
@@ -184,7 +184,16 @@ def draw_action(screen, ships, blips, flip=True):
         #print airship_rot.
 
 def draw_strategy(justastring):
+    # to be used for drawing interface and between action information, currently just filled with gibberish
     print justastring
+    text1 = font.render('order 1', 1, (255,255,255))
+    text2 = font.render('order 2', 1, (255,255,255))
+    text3 = font.render('order 3', 1, (255,255,255))
+    screen.blit(text1, (5,50))
+    screen.blit(text2, (5,75))
+    screen.blit(text3, (5,100))
+    pygame.display.flip()
+
 
 map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
@@ -193,6 +202,9 @@ blips = []
 mapcenter = MAP_CENTER
 #delta_pos = Vector(0,0)
 GAME_ROUND = 0
+STEP = 0
+orig_pos = airship.position
+draw_action(screen, [airship], blips)
 
 while 1:
     GAME_ROUND += 1
@@ -276,12 +288,10 @@ while 1:
     #### And below is the "realtime" part
 
     #    blips = []
-    orig_pos = airship.position
+
     #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
     i=t=0
     clicked = False
-
-    STEP = 0
     map.wind_direction += random()-0.5
 
     while airship.carry_out_order():
@@ -322,8 +332,7 @@ while 1:
             # move the time forward by one "tick"
             clock.tick(FRAMES_PER_SECOND)
             t += 1/FRAMES_PER_SECOND
-            if STEP == 3 and i == 89:
-                draw_strategy('the end')
+
 
             # Check if the user has clicked a mousebutton...
             # for event in pygame.event.get():
