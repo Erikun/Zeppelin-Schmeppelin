@@ -195,7 +195,7 @@ def draw_strategy(justastring):
     pygame.display.flip()
 
 
-map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
+map = Map("forest.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 font = pygame.font.Font(None, 36)
 blips = []
