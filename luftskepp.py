@@ -1,15 +1,17 @@
 from __future__ import division
 
+import sys
 import pygame, time, math
 from pygame.locals import *
 from pygame import gfxdraw, Rect
 from vector import Vector
 from random import random
+from pgu import gui
 
 pygame.init()
 
 SWIDTH, SHEIGHT = 1024, 768
-screen = pygame.display.set_mode((SWIDTH, SHEIGHT), DOUBLEBUF)
+screen = pygame.display.set_mode((SWIDTH, SHEIGHT), SWSURFACE)
 
 GREEN = (20,150,20)
 MAP_CENTER = Vector(SWIDTH//2, SHEIGHT//2)
@@ -19,6 +21,73 @@ clock = pygame.time.Clock()
 FRAMES_PER_SECOND = 30
 TURNTIME = 3  # s
 
+class OrderControl(gui.Table):
+    def __init__(self,**params):
+        gui.Table.__init__(self,background=(255,255,255),**params)
+
+        def orders_finished(doh):
+            self.done = True
+
+        #orders = []
+        fg = (0,0,0)
+
+        self.done = False
+
+        self.tr()
+        self.td(gui.Label("Your orders, sir?",color=fg),colspan=2)
+
+        self.tr()
+        self.td(gui.Label("ORDER 1",color=fg),colspan=2)
+
+        self.tr()
+        self.td(gui.Label("Speed: ",color=fg),align=1)
+        e = gui.HSlider(0,-10000,30000, step=1000,
+                        size=20,width=100,height=16,name='speed1')
+        self.td(e)
+
+        self.tr()
+        self.td(gui.Label("Turn: ",color=fg),align=1)
+        e = gui.HSlider(0,-50,50,step=10,
+                        size=20,width=100,height=16,name='turn1')
+        self.td(e)
+
+        self.tr()
+        self.td(gui.Label("ORDER 2",color=fg),colspan=2)
+
+        self.tr()
+        self.td(gui.Label("Speed: ",color=fg),align=1)
+        e = gui.HSlider(0,-10000,30000,step=1000,
+                        size=20,width=100,height=16,name='speed2')
+        self.td(e)
+
+        self.tr()
+        self.td(gui.Label("Turn: ",color=fg),align=1)
+        e = gui.HSlider(0,-50,50, step=10,
+                        size=20,width=100,height=16,name='turn2')
+        self.td(e)
+
+        self.tr()
+        self.td(gui.Label("ORDER 3",color=fg),colspan=2)
+
+        self.tr()
+        self.td(gui.Label("Speed: ",color=fg),align=1)
+        e = gui.HSlider(0,-10000,30000, step=1000,
+                        size=20,width=100,height=16,name='speed3')
+        self.td(e)
+
+        self.tr()
+        self.td(gui.Label("Turn: ",color=fg),align=1)
+        e = gui.HSlider(0,-50, 50, step=10,
+                        size=20,width=100,height=16,name='turn3')
+        self.td(e)
+
+        self.tr()
+        self.btn = gui.Button("Make it so!")
+        self.td(self.btn, colspan=2)
+        #self.btn.connect(gui.CHANGE, fullscreen_changed, btn)
+        self.btn.connect(gui.CLICK, orders_finished, None)
+
+
 class Order(object):
     """
     An order given to a ship
@@ -26,7 +95,6 @@ class Order(object):
     def __init__(self, turn=0, motor=-1):
         self.turn = turn
         self.motor = motor
-
 
 class Airship(object):
     """
@@ -89,12 +157,12 @@ class Airship(object):
         acceleration = force_tot/self.mass
         torque_tot = self.torque - self.turn_drag*self.angular_freq
         rot_accel = torque_tot/self.moment_of_inertia
-        print "Acceleration =", acceleration
+        #print "Acceleration =", acceleration
 
         # Update ship speed using ship's acceleration
         self.airspeed = self.airspeed+acceleration*t
         self.angular_freq = self.angular_freq+rot_accel*t
-        print "angular_freq:",self.angular_freq
+        #print "angular_freq:",self.angular_freq
 
     def move(self, t, wind):
 
@@ -147,8 +215,6 @@ class Map(object):
         return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
 
 
-
-
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
 
@@ -164,8 +230,8 @@ def draw_action(screen, ships, blips, flip=True):
         #img_size = airship.get_surface_size()
         img_size = Vector(airship_surf[0].get_width(),
                           airship_surf[0].get_height())
-        print img_size
-        print "map_coords:", map.get_screen_coords(airship.position)
+        #print img_size
+        #print "map_coords:", map.get_screen_coords(airship.position)
         screen.blit(airship_surf[1], (map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
         screen.blit(airship_surf[0], (map.get_screen_coords(airship.position)-img_size/2).tuple())
 
@@ -177,8 +243,8 @@ def draw_action(screen, ships, blips, flip=True):
         text1 = font.render("Speed: %.2f Motor:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.airspeed, ship.motor_force, math.degrees(ship.angular_freq), ship.position.x, ship.position.y), 1, (255,255,255))
         text2 = font.render("GAME ROUND:%d, STEP:%d"%(GAME_ROUND, STEP), 1, (255,255,0))
 
-        screen.blit(text1, (5,5))
-        screen.blit(text2, (5,25))
+        screen.blit(text1, (250,5))
+        screen.blit(text2, (250,25))
         if flip:
             pygame.display.flip()
         #print airship_rot.
@@ -195,7 +261,7 @@ def draw_strategy(justastring):
     pygame.display.flip()
 
 
-map = Map("forest.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
+map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 font = pygame.font.Font(None, 36)
 blips = []
@@ -206,40 +272,37 @@ STEP = 0
 orig_pos = airship.position
 draw_action(screen, [airship], blips)
 
+# GUI stuff
+form = gui.Form()
+app = gui.App()
+ordercontrol = OrderControl()
+c = gui.Container(align=-1,valign=-1)
+c.add(ordercontrol,0,0)
+app.init(c)
+
+print "lappskojs"
+
 while 1:
     GAME_ROUND += 1
 
-    last_motor = airship.motor_force
-    last_turn = airship.torque
+    # Order giving GUI loop
+    while not ordercontrol.done:
+        for e in pygame.event.get():
+            if e.type is QUIT:
+                done = True
+            elif e.type is KEYDOWN and e.key == K_ESCAPE:
+                done = True
+            else:
+                app.event(e)
+        app.paint(screen)
+        pygame.display.flip()
 
-    for i in range(3):
-        print "### GAME ROUND %d ###"%GAME_ROUND
-        print "   --- ORDER #%d --- "%(i+1)
-        motor = raw_input("   Motor speed, %d..%d [%.2f]:"%(
-                airship.max_motor_force_backwards,
-                airship.max_motor_force_forwards, last_motor))
-        turn = raw_input("   Turn speed, %d..%d [%.2f]:"%(
-                -airship.max_torque, airship.max_torque, last_turn))
+    ordercontrol.done = False
+    print form.items()
+    airship.give_order(Order(motor=form["speed1"].value, turn=form["turn1"].value))
+    airship.give_order(Order(motor=form["speed2"].value, turn=form["turn2"].value))
+    airship.give_order(Order(motor=form["speed3"].value, turn=form["turn3"].value))
 
-        # Sanitize input
-        if motor == "":
-            motor = last_motor
-        if turn == "":
-            turn = last_turn
-        motor, turn = float(motor), float(turn)
-        motor = max(airship.max_motor_force_backwards,
-                    min(motor, airship.max_motor_force_forwards))
-        turn = max(-airship.max_torque, min(airship.max_torque, turn))
-
-        order = Order(turn, motor)
-        airship.give_order(order)
-
-        last_motor, last_turn = motor, turn
-
-
-
-    #ship_screen_pos = map.get_screen_coords(airship.position)
-    #print "ship_screen_pos:", ship_screen_pos
 
     #### This is the user input loop
     # clicked = False
@@ -287,11 +350,11 @@ while 1:
 
     #### And below is the "realtime" part
 
-    #    blips = []
-
+    blips = []
+    STEP=0
     #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
     i=t=0
-    clicked = False
+    #clicked = False
     map.wind_direction += random()-0.5
 
     while airship.carry_out_order():
@@ -311,19 +374,19 @@ while 1:
 
             # check if we need to scroll the background
             ship_screen_pos = map.get_screen_coords(airship.position)
-            print "ship_screen_pos:", ship_screen_pos
+            #print "ship_screen_pos:", ship_screen_pos
             d = 0.3
             if ship_screen_pos.x > SWIDTH - SWIDTH*d:
-                print "X+"
+                #print "X+"
                 map.position.x += ship_screen_pos.x - (SWIDTH - SWIDTH*d)
             if ship_screen_pos.x < SWIDTH * d:
-                print "X-"
+                #print "X-"
                 map.position.x += ship_screen_pos.x - SWIDTH * d
             if ship_screen_pos.y > SHEIGHT - SHEIGHT * d:
-                print "Y+"
+                #print "Y+"
                 map.position.y += ship_screen_pos.y - (SHEIGHT - SHEIGHT * d)
             if ship_screen_pos.y < SHEIGHT * d:
-                print "Y-"
+                #print "Y-"
                 map.position.y += ship_screen_pos.y - SHEIGHT * d
 
             # update the screen
