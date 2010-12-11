@@ -1,1 +1,3 @@
 The Zeppelin project
+
+Needs PGU for gui stuff. Download http://code.google.com/p/pgu/downloads/detail?name=pgu-0.12.3.zip&can=2&q= and either install it, or copy the "pgu" and "data" directories into the game's directory.
