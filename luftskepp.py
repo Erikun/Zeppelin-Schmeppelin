@@ -218,7 +218,7 @@ class Map(object):
 
     def get_windsurface(self):
         #scale and transform windarrow
-        return (pygame.transform.rotozoom(self.wind, (math.degrees(self.wind_direction)+180), SCALE2))
+        return (pygame.transform.rotozoom(self.wind, -math.degrees(self.wind_direction), SCALE2))
 
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
