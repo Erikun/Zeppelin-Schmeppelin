@@ -220,6 +220,12 @@ class Map(object):
         #scale and transform windarrow
         return (pygame.transform.rotozoom(self.wind, (math.degrees(self.wind_direction)), SCALE2))
 
+    def change_wind(self):
+        new_wind = random()-0.5
+        self.wind_direction += new_wind
+        return self.wind_direction
+
+
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
 
@@ -283,9 +289,9 @@ app.init(c)
 print "lappskojs"
 
 while 1:
-    new_wind = random()-0.5
-    map.wind_direction += new_wind
-    winddeg = map.wind_direction
+
+
+    winddeg = map.change_wind()
     #print math.degrees(new_wind)
     print math.degrees(winddeg)
     draw_strategy(map)
