@@ -218,7 +218,7 @@ class Map(object):
 
     def get_windsurface(self):
         #scale and transform windarrow
-        return (pygame.transform.rotozoom(self.wind, -math.degrees(self.wind_direction), SCALE2))
+        return (pygame.transform.rotozoom(self.wind, (math.degrees(self.wind_direction)), SCALE2))
 
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
@@ -286,10 +286,11 @@ while 1:
     new_wind = random()-0.5
     map.wind_direction += new_wind
     winddeg = map.wind_direction
-    print math.degrees(new_wind)
+    #print math.degrees(new_wind)
     print math.degrees(winddeg)
     draw_strategy(map)
     GAME_ROUND += 1
+    #print "Heading:", airship.heading
 
     # Order giving GUI loop
     while not ordercontrol.done:
