@@ -127,9 +127,9 @@ class Airship(object):
         Create a surface containing the scaled and rotated ship + shadow
         """
         return (pygame.transform.rotozoom(self.image,
-                                          math.degrees(self.heading), SCALE),
+                                          math.degrees(-self.heading), SCALE),
                 pygame.transform.rotozoom(self.shadowimage,
-                                          math.degrees(self.heading), SCALE))
+                                          math.degrees(-self.heading), SCALE))
 
 #    def get_surface_size(self):
 #        return Vector(self.image.get_width(), self.image.get_height())
@@ -151,7 +151,7 @@ class Airship(object):
     def get_direction_vector(self):
         # Return a unit vector pointing in the ship's direction
         return Vector(math.cos(self.heading),
-                      -math.sin(self.heading))
+                      math.sin(self.heading))
 
     def update(self, t):
         force_tot = self.motor_force - self.air_drag*self.airspeed
@@ -214,7 +214,7 @@ class Map(object):
 
 
     def get_wind_vector(self):
-        return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
+        return self.windspeed*Vector(math.cos(self.wind_direction), -math.sin(self.wind_direction))
 
     def get_windsurface(self):
         #scale and transform windarrow
