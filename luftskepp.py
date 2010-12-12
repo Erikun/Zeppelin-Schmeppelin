@@ -16,6 +16,7 @@ screen = pygame.display.set_mode((SWIDTH, SHEIGHT), SWSURFACE)
 GREEN = (20,150,20)
 MAP_CENTER = Vector(SWIDTH//2, SHEIGHT//2)
 SCALE = 0.25
+SCALE2 = 0.5
 
 clock = pygame.time.Clock()
 FRAMES_PER_SECOND = 30
@@ -179,8 +180,9 @@ class Airship(object):
 
 
 class Map(object):
-    def __init__(self, image, duplication=(1,1), position=None, ships=[], wind_direction = 0, windspeed=0):
-        self.tile = pygame.image.load(image)
+    def __init__(self, mimage, wimage, duplication=(1,1), position=None, ships=[], wind_direction = 0, windspeed=0):
+        self.tile = pygame.image.load(mimage)
+        self.wind = pygame.image.load(wimage)
         #self.position = position    # where is the center of the screen?
         self.surface = pygame.Surface((self.tile.get_width()*duplication[0],
                                       self.tile.get_height()*duplication[1]))
@@ -214,6 +216,9 @@ class Map(object):
     def get_wind_vector(self):
         return self.windspeed*Vector(math.cos(self.wind_direction), math.sin(self.wind_direction))
 
+    def get_windsurface(self):
+        #scale and transform windarrow
+        return (pygame.transform.rotozoom(self.wind, (math.degrees(self.wind_direction)+180), SCALE2))
 
 def draw_background(map):
     screen.blit(map.get_visible_surface(), dest=(0,0))
@@ -249,19 +254,14 @@ def draw_action(screen, ships, blips, flip=True):
             pygame.display.flip()
         #print airship_rot.
 
-def draw_strategy(justastring):
-    # to be used for drawing interface and between action information, currently just filled with gibberish
-    print justastring
-    text1 = font.render('order 1', 1, (255,255,255))
-    text2 = font.render('order 2', 1, (255,255,255))
-    text3 = font.render('order 3', 1, (255,255,255))
-    screen.blit(text1, (5,50))
-    screen.blit(text2, (5,75))
-    screen.blit(text3, (5,100))
+def draw_strategy(themap):
+    # draws arrow showing wind direciton
+    windarrow = themap.get_windsurface()
+    screen.blit(windarrow, (25, 500))
     pygame.display.flip()
 
 
-map = Map("dublin.jpg", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
+map = Map("dublin.jpg", "windarrow.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
 airship = Airship('airship.png', 'shadow.png', position=map.position)
 font = pygame.font.Font(None, 36)
 blips = []
@@ -272,6 +272,7 @@ STEP = 0
 orig_pos = airship.position
 draw_action(screen, [airship], blips)
 
+
 # GUI stuff
 form = gui.Form()
 app = gui.App()
@@ -279,10 +280,15 @@ ordercontrol = OrderControl()
 c = gui.Container(align=-1,valign=-1)
 c.add(ordercontrol,0,0)
 app.init(c)
-
 print "lappskojs"
 
 while 1:
+    new_wind = random()-0.5
+    map.wind_direction += new_wind
+    winddeg = map.wind_direction
+    print math.degrees(new_wind)
+    print math.degrees(winddeg)
+    draw_strategy(map)
     GAME_ROUND += 1
 
     # Order giving GUI loop
@@ -355,7 +361,6 @@ while 1:
     #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
     i=t=0
     #clicked = False
-    map.wind_direction += random()-0.5
 
     while airship.carry_out_order():
         STEP += 1
