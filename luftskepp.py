@@ -15,7 +15,7 @@ screen = pygame.display.set_mode((SWIDTH, SHEIGHT), SWSURFACE)
 
 GREEN = (20,150,20)
 MAP_CENTER = Vector(SWIDTH//2, SHEIGHT//2)
-SCALE = 0.25
+SCALE = 0.4
 SCALE2 = 0.5
 
 clock = pygame.time.Clock()
