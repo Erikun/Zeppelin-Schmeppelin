@@ -175,12 +175,12 @@ while 1:
         STEP += 1
         for i in range(TURNTIME * FRAMES_PER_SECOND):
 
-            airship.update(1./FRAMES_PER_SECOND)
+            airship.update(1./FRAMES_PER_SECOND, map.get_wind_vector())
 
             # let's move the ship
-            airship.move(1./FRAMES_PER_SECOND, map.get_wind_vector())
+            #airship.move(1./FRAMES_PER_SECOND, map.get_wind_vector())
             # ...and turn it
-            airship.turn(1./FRAMES_PER_SECOND)
+            #airship.turn(1./FRAMES_PER_SECOND)
 
             # add some markers each second, to show the ships movement
             if i%FRAMES_PER_SECOND == 0:

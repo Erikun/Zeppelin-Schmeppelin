@@ -11,9 +11,9 @@ class Order(object):
         self.turn = turn
         self.motor = motor
 
-class Airship(object):
+class Airship(pygame.sprite.Sprite):
     """
-    A class to describe an airship
+    A (sprite derived) class to describe an airship
     """
     def __init__(self, image, shadowimage, position=Vector(0,0), heading=0,
                  airspeed=0, acceleration=0, angular_freq=0, motor=0, torque=0):
@@ -67,7 +67,7 @@ class Airship(object):
         return Vector(math.cos(self.heading),
                       math.sin(self.heading))
 
-    def update(self, t):
+    def update_physics(self, t):
         force_tot = self.motor_force - self.air_drag*self.airspeed
         acceleration = force_tot/self.mass
         torque_tot = self.torque - self.turn_drag*self.angular_freq
@@ -78,6 +78,11 @@ class Airship(object):
         self.airspeed = self.airspeed+acceleration*t
         self.angular_freq = self.angular_freq+rot_accel*t
         #print "angular_freq:",self.angular_freq
+
+    def update(self, t, wind):
+        self.update_physics(t)
+        self.move(t, wind)
+        self.turn(t)
 
     def move(self, t, wind):
 
