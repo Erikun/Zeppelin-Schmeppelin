@@ -8,6 +8,10 @@ from vector import Vector
 from random import random
 from pgu import gui
 
+from interface import OrderControl
+from vessel import Airship, Order
+from world import Map
+
 pygame.init()
 
 SWIDTH, SHEIGHT = 1024, 768
@@ -22,208 +26,6 @@ clock = pygame.time.Clock()
 FRAMES_PER_SECOND = 30
 TURNTIME = 3  # s
 
-class OrderControl(gui.Table):
-    def __init__(self,**params):
-        gui.Table.__init__(self,background=(255,255,255),**params)
-
-        def orders_finished(doh):
-            self.done = True
-
-        #orders = []
-        fg = (0,0,0)
-
-        self.done = False
-
-        self.tr()
-        self.td(gui.Label("Your orders, sir?",color=fg),colspan=2)
-
-        self.tr()
-        self.td(gui.Label("ORDER 1",color=fg),colspan=2)
-
-        self.tr()
-        self.td(gui.Label("Speed: ",color=fg),align=1)
-        e = gui.HSlider(0,-10000,30000, step=1000,
-                        size=20,width=100,height=16,name='speed1')
-        self.td(e)
-
-        self.tr()
-        self.td(gui.Label("Turn: ",color=fg),align=1)
-        e = gui.HSlider(0,-50,50,step=10,
-                        size=20,width=100,height=16,name='turn1')
-        self.td(e)
-
-        self.tr()
-        self.td(gui.Label("ORDER 2",color=fg),colspan=2)
-
-        self.tr()
-        self.td(gui.Label("Speed: ",color=fg),align=1)
-        e = gui.HSlider(0,-10000,30000,step=1000,
-                        size=20,width=100,height=16,name='speed2')
-        self.td(e)
-
-        self.tr()
-        self.td(gui.Label("Turn: ",color=fg),align=1)
-        e = gui.HSlider(0,-50,50, step=10,
-                        size=20,width=100,height=16,name='turn2')
-        self.td(e)
-
-        self.tr()
-        self.td(gui.Label("ORDER 3",color=fg),colspan=2)
-
-        self.tr()
-        self.td(gui.Label("Speed: ",color=fg),align=1)
-        e = gui.HSlider(0,-10000,30000, step=1000,
-                        size=20,width=100,height=16,name='speed3')
-        self.td(e)
-
-        self.tr()
-        self.td(gui.Label("Turn: ",color=fg),align=1)
-        e = gui.HSlider(0,-50, 50, step=10,
-                        size=20,width=100,height=16,name='turn3')
-        self.td(e)
-
-        self.tr()
-        self.btn = gui.Button("Make it so!")
-        self.td(self.btn, colspan=2)
-        #self.btn.connect(gui.CHANGE, fullscreen_changed, btn)
-        self.btn.connect(gui.CLICK, orders_finished, None)
-
-
-class Order(object):
-    """
-    An order given to a ship
-    """
-    def __init__(self, turn=0, motor=-1):
-        self.turn = turn
-        self.motor = motor
-
-class Airship(object):
-    """
-    A class to describe an airship
-    """
-    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0,
-                 airspeed=0, acceleration=0, angular_freq=0, motor=0, torque=0):
-        self.image = pygame.image.load(image)
-        self.shadowimage = pygame.image.load(shadowimage)
-        self.position = position
-        self.heading = heading       # rad
-        self.airspeed = airspeed     # m/s
-        #self.acceleration = acceleration
-        self.mass = 10000.0   # kg
-        self.moment_of_inertia = 1000   # Nms**2
-        self.angular_freq = angular_freq   # rad/s
-        self.motor_force = motor       # N
-        self.torque = torque     # Nm
-        self.max_motor_force_forwards = 30000
-        self.max_motor_force_backwards = -10000
-        #self.max_rotation = 10     # degrees/s
-        self.max_torque = 50  # absolute
-        self.air_drag = 1000   # Ns/m
-        self.turn_drag = 200   #
-        self.orders = []
-
-    def get_surface(self):
-        """
-        Create a surface containing the scaled and rotated ship + shadow
-        """
-        return (pygame.transform.rotozoom(self.image,
-                                          math.degrees(-self.heading), SCALE),
-                pygame.transform.rotozoom(self.shadowimage,
-                                          math.degrees(-self.heading), SCALE))
-
-#    def get_surface_size(self):
-#        return Vector(self.image.get_width(), self.image.get_height())
-
-    def give_order(self, order):
-        if len(self.orders) < 3:
-            self.orders.append(order)
-
-    def carry_out_order(self):
-        if len(self.orders)>0:
-            order = self.orders[0]
-            self.orders.remove(order)
-            self.motor_force = order.motor
-            self.torque = order.turn
-            return True
-        else:
-            return False
-
-    def get_direction_vector(self):
-        # Return a unit vector pointing in the ship's direction
-        return Vector(math.cos(self.heading),
-                      math.sin(self.heading))
-
-    def update(self, t):
-        force_tot = self.motor_force - self.air_drag*self.airspeed
-        acceleration = force_tot/self.mass
-        torque_tot = self.torque - self.turn_drag*self.angular_freq
-        rot_accel = torque_tot/self.moment_of_inertia
-        #print "Acceleration =", acceleration
-
-        # Update ship speed using ship's acceleration
-        self.airspeed = self.airspeed+acceleration*t
-        self.angular_freq = self.angular_freq+rot_accel*t
-        #print "angular_freq:",self.angular_freq
-
-    def move(self, t, wind):
-
-        # Move the ship along its heading
-        direction = self.get_direction_vector()
-        self.position += direction*self.airspeed*t + wind
-
-    def turn(self, t):
-        # turn the ship according to its rotation
-        self.heading += self.angular_freq*t
-
-    def get_position_tuple(self):
-        return (self.position.x, self.position.y)
-
-
-class Map(object):
-    def __init__(self, mimage, wimage, duplication=(1,1), position=None, ships=[], wind_direction = 0, windspeed=0):
-        self.tile = pygame.image.load(mimage)
-        self.wind = pygame.image.load(wimage)
-        #self.position = position    # where is the center of the screen?
-        self.surface = pygame.Surface((self.tile.get_width()*duplication[0],
-                                      self.tile.get_height()*duplication[1]))
-        self.wind_direction = wind_direction
-        self.windspeed = windspeed
-        # Init the map background
-        for x in range(duplication[0]):
-            for y in range(duplication[1]):
-                self.surface.blit(self.tile, (x*self.tile.get_width(),
-                                              y*self.tile.get_height()))
-        self.ships = ships
-        if position is None:
-            self.position = Vector(self.surface.get_width(),
-                                    self.surface.get_height())/2
-        else:
-            self.position = position
-
-
-    def get_visible_rect(self):
-        return pygame.Rect(self.position.x-SWIDTH//2,
-                           self.position.y-SHEIGHT//2,
-                           SWIDTH, SHEIGHT)
-
-    def get_visible_surface(self):
-        return self.surface.subsurface(self.get_visible_rect())
-
-    def get_screen_coords(self, mapcoords):
-        return (mapcoords-self.position+Vector(SWIDTH//2,SHEIGHT//2))
-
-
-    def get_wind_vector(self):
-        return self.windspeed*Vector(math.cos(self.wind_direction), -math.sin(self.wind_direction))
-
-    def get_windsurface(self):
-        #scale and transform windarrow
-        return (pygame.transform.rotozoom(self.wind, (math.degrees(self.wind_direction)), SCALE2))
-
-    def change_wind(self):
-        new_wind = random()-0.5
-        self.wind_direction += new_wind
-        return self.wind_direction
 
 
 def draw_background(map):
@@ -237,7 +39,7 @@ def draw_action(screen, ships, blips, flip=True):
 
     for ship in ships:
         #airship.angle += 1
-        airship_surf = ship.get_surface()
+        airship_surf = ship.get_surface(scale=SCALE)
         #img_size = airship.get_surface_size()
         img_size = Vector(airship_surf[0].get_width(),
                           airship_surf[0].get_height())
@@ -262,7 +64,7 @@ def draw_action(screen, ships, blips, flip=True):
 
 def draw_strategy(themap):
     # draws arrow showing wind direciton
-    windarrow = themap.get_windsurface()
+    windarrow = themap.get_windsurface(scale=SCALE2)
     screen.blit(windarrow, (25, 500))
     pygame.display.flip()
 
