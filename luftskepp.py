@@ -12,6 +12,8 @@ from interface import OrderControl
 from vessel import Airship, Order
 from world import Map
 
+import util
+
 pygame.init()
 
 SWIDTH, SHEIGHT = 1024, 768
@@ -25,6 +27,8 @@ SCALE2 = 0.5
 clock = pygame.time.Clock()
 FRAMES_PER_SECOND = 30
 TURNTIME = 3  # s
+
+module_logger = util.get_module_logger(__name__)
 
 
 
@@ -43,13 +47,13 @@ def draw_action(screen, ships, blips, flip=True):
         #img_size = airship.get_surface_size()
         img_size = Vector(airship_surf[0].get_width(),
                           airship_surf[0].get_height())
-        #print img_size
-        #print "map_coords:", world_map.get_screen_coords(airship.position)
+        module_logger.debug("image size: " + str(img_size))
+        module_logger.debug("map_coords:" +  str(world_map.get_screen_coords(airship.position)))
         screen.blit(airship_surf[1], (world_map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
         screen.blit(airship_surf[0], (world_map.get_screen_coords(airship.position)-img_size/2).tuple())
 
         for i, b in enumerate(blips):
-            blip_pos = world_map.get_screen_coords(b[0])
+            blip_pos = world_map.get_screen_coords(b[0])           
             colors = [(255,0,0), (0,255,0), (0,0,255)] 
             pygame.draw.circle(screen, colors[b[1]-1], map(int, blip_pos.tuple()), 3)
 
@@ -95,7 +99,7 @@ while 1:
 
     winddeg = world_map.change_wind()
     #print math.degrees(new_wind)
-    print math.degrees(winddeg)
+    module_logger.debug(math.degrees(winddeg))
     draw_strategy(world_map)
     GAME_ROUND += 1
     #print "Heading:", airship.heading
@@ -113,7 +117,7 @@ while 1:
         pygame.display.flip()
 
     ordercontrol.done = False
-    print form.items()
+    module_logger.debug(form.items())
     airship.give_order(Order(motor=form["speed1"].value, turn=form["turn1"].value))
     airship.give_order(Order(motor=form["speed2"].value, turn=form["turn2"].value))
     airship.give_order(Order(motor=form["speed3"].value, turn=form["turn3"].value))
@@ -204,7 +208,6 @@ while 1:
                 world_map.position.y += ship_screen_pos.y - SHEIGHT * d
 
             # update the screen
-            print blips
             draw_action(screen, [airship], blips)
 
             # move the time forward by one "tick"
