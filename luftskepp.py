@@ -28,14 +28,14 @@ TURNTIME = 3  # s
 
 
 
-def draw_background(map):
-    screen.blit(map.get_visible_surface(), dest=(0,0))
+def draw_background(world_map):
+    screen.blit(world_map.get_visible_surface(), dest=(0,0))
 
 
 def draw_action(screen, ships, blips, flip=True):
     # draw movement and action phase
     #screen.fill(GREEN)
-    draw_background(map)
+    draw_background(world_map)
 
     for ship in ships:
         #airship.angle += 1
@@ -44,14 +44,14 @@ def draw_action(screen, ships, blips, flip=True):
         img_size = Vector(airship_surf[0].get_width(),
                           airship_surf[0].get_height())
         #print img_size
-        #print "map_coords:", map.get_screen_coords(airship.position)
-        screen.blit(airship_surf[1], (map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
-        screen.blit(airship_surf[0], (map.get_screen_coords(airship.position)-img_size/2).tuple())
+        #print "map_coords:", world_map.get_screen_coords(airship.position)
+        screen.blit(airship_surf[1], (world_map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
+        screen.blit(airship_surf[0], (world_map.get_screen_coords(airship.position)-img_size/2).tuple())
 
         for i, b in enumerate(blips):
-            blip_pos = map.get_screen_coords(b[0])
-            colors = [(255,0,0), (0,255,0), (0,0,255)]
-            pygame.draw.circle(screen, colors[b[1]-1], blip_pos.tuple(), 3)
+            blip_pos = world_map.get_screen_coords(b[0])
+            colors = [(255,0,0), (0,255,0), (0,0,255)] 
+            pygame.draw.circle(screen, colors[b[1]-1], map(int, blip_pos.tuple()), 3)
 
         text1 = font.render("Speed: %.2f Motor:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.airspeed, ship.motor_force, math.degrees(ship.angular_freq), ship.position.x, ship.position.y), 1, (255,255,255))
         text2 = font.render("GAME ROUND:%d, STEP:%d"%(GAME_ROUND, STEP), 1, (255,255,0))
@@ -69,8 +69,8 @@ def draw_strategy(themap):
     pygame.display.flip()
 
 
-map = Map("dublin.jpg", "windarrow.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
-airship = Airship('airship.png', 'shadow.png', position=map.position)
+world_map = Map("dublin.jpg", "windarrow.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
+airship = Airship('airship.png', 'shadow.png', position=world_map.position)
 font = pygame.font.Font(None, 36)
 blips = []
 mapcenter = MAP_CENTER
@@ -93,10 +93,10 @@ print "lappskojs"
 while 1:
 
 
-    winddeg = map.change_wind()
+    winddeg = world_map.change_wind()
     #print math.degrees(new_wind)
     print math.degrees(winddeg)
-    draw_strategy(map)
+    draw_strategy(world_map)
     GAME_ROUND += 1
     #print "Heading:", airship.heading
 
@@ -132,7 +132,7 @@ while 1:
 
     #     # Figure out where the user clicked in relation to the ship
     #     mousepos = Vector(pygame.mouse.get_pos())
-    #     airship_screenpos = map.get_screen_coords(airship.position)
+    #     airship_screenpos = world_map.get_screen_coords(airship.position)
     #     mousedir = mousepos - airship_screenpos
     #     mousedist = math.sqrt(mousedir.x**2 + mousedir.y**2)
     #     mouseangle = math.acos(mousedir.x/mousedist)
@@ -175,10 +175,10 @@ while 1:
         STEP += 1
         for i in range(TURNTIME * FRAMES_PER_SECOND):
 
-            airship.update(1./FRAMES_PER_SECOND, map.get_wind_vector())
+            airship.update(1./FRAMES_PER_SECOND, world_map.get_wind_vector())
 
             # let's move the ship
-            #airship.move(1./FRAMES_PER_SECOND, map.get_wind_vector())
+            #airship.move(1./FRAMES_PER_SECOND, world_map.get_wind_vector())
             # ...and turn it
             #airship.turn(1./FRAMES_PER_SECOND)
 
@@ -187,23 +187,24 @@ while 1:
                 blips.append((airship.position, STEP))
 
             # check if we need to scroll the background
-            ship_screen_pos = map.get_screen_coords(airship.position)
+            ship_screen_pos = world_map.get_screen_coords(airship.position)
             #print "ship_screen_pos:", ship_screen_pos
             d = 0.3
             if ship_screen_pos.x > SWIDTH - SWIDTH*d:
                 #print "X+"
-                map.position.x += ship_screen_pos.x - (SWIDTH - SWIDTH*d)
+                world_map.position.x += ship_screen_pos.x - (SWIDTH - SWIDTH*d)
             if ship_screen_pos.x < SWIDTH * d:
                 #print "X-"
-                map.position.x += ship_screen_pos.x - SWIDTH * d
+                world_map.position.x += ship_screen_pos.x - SWIDTH * d
             if ship_screen_pos.y > SHEIGHT - SHEIGHT * d:
                 #print "Y+"
-                map.position.y += ship_screen_pos.y - (SHEIGHT - SHEIGHT * d)
+                world_map.position.y += ship_screen_pos.y - (SHEIGHT - SHEIGHT * d)
             if ship_screen_pos.y < SHEIGHT * d:
                 #print "Y-"
-                map.position.y += ship_screen_pos.y - SHEIGHT * d
+                world_map.position.y += ship_screen_pos.y - SHEIGHT * d
 
             # update the screen
+            print blips
             draw_action(screen, [airship], blips)
 
             # move the time forward by one "tick"
