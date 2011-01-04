@@ -36,6 +36,8 @@ class Airship(pygame.sprite.Sprite):
         self.turn_drag = 200   #
         self.orders = []
 
+        self.history = []
+
     def get_surface(self, scale):
         """
         Create a surface containing the scaled and rotated ship + shadow
@@ -81,6 +83,7 @@ class Airship(pygame.sprite.Sprite):
 
     def update(self, t, wind):
         self.update_physics(t)
+        self.history.append(self.position)
         self.move(t, wind)
         self.turn(t)
 

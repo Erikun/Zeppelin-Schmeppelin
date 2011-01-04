@@ -16,7 +16,7 @@ class OrderControl(gui.Table):
         self.td(gui.Label("Your orders, sir?",color=fg),colspan=2)
 
         self.tr()
-        self.td(gui.Label("ORDER 1",color=fg),colspan=2)
+        self.td(gui.Label("AIRSHIP 1",color=(255,0,0)), colspan=2)
 
         self.tr()
         self.td(gui.Label("Speed: ",color=fg),align=1)
@@ -31,7 +31,7 @@ class OrderControl(gui.Table):
         self.td(e)
 
         self.tr()
-        self.td(gui.Label("ORDER 2",color=fg),colspan=2)
+        self.td(gui.Label("AIRSHIP 2",color=(0,255,0)), colspan=2)
 
         self.tr()
         self.td(gui.Label("Speed: ",color=fg),align=1)
@@ -46,7 +46,7 @@ class OrderControl(gui.Table):
         self.td(e)
 
         self.tr()
-        self.td(gui.Label("ORDER 3",color=fg),colspan=2)
+        self.td(gui.Label("SIRSHIP 3",color=(0,0,255)),colspan=2)
 
         self.tr()
         self.td(gui.Label("Speed: ",color=fg),align=1)

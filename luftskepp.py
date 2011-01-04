@@ -36,35 +36,38 @@ def draw_background(world_map):
     screen.blit(world_map.get_visible_surface(), dest=(0,0))
 
 
-def draw_action(screen, ships, blips, flip=True):
+def draw_action(screen, ships, flip=True):
     # draw movement and action phase
     #screen.fill(GREEN)
     draw_background(world_map)
+    colors = [(255,0,0), (0,255,0), (0,0,255)]
 
-    for ship in ships:
+    for i,ship in enumerate(ships):
         #airship.angle += 1
         airship_surf = ship.get_surface(scale=SCALE)
         #img_size = airship.get_surface_size()
         img_size = Vector(airship_surf[0].get_width(),
                           airship_surf[0].get_height())
         module_logger.debug("image size: " + str(img_size))
-        module_logger.debug("map_coords:" +  str(world_map.get_screen_coords(airship.position)))
-        screen.blit(airship_surf[1], (world_map.get_screen_coords(airship.position)-img_size/2+Vector(20,20)).tuple())
-        screen.blit(airship_surf[0], (world_map.get_screen_coords(airship.position)-img_size/2).tuple())
+        module_logger.debug("map_coords:" +  str(world_map.get_screen_coords(ship.position)))
+        screen.blit(airship_surf[1], (world_map.get_screen_coords(ship.position)-img_size/2+Vector(20,20)).tuple())
+        screen.blit(airship_surf[0], (world_map.get_screen_coords(ship.position)-img_size/2).tuple())
 
-        for i, b in enumerate(blips):
-            blip_pos = world_map.get_screen_coords(b[0])           
-            colors = [(255,0,0), (0,255,0), (0,0,255)] 
-            pygame.draw.circle(screen, colors[b[1]-1], map(int, blip_pos.tuple()), 3)
+        pathpoints=[]
+        for j, b in enumerate(ship.history[-min(len(ship.history),100)::10]):
+            blip_pos = world_map.get_screen_coords(b)
+            pathpoints.append(blip_pos.tuple())
+            #pygame.draw.circle(screen, colors[i//3-1], map(int, blip_pos.tuple()), 3)
+        if len(pathpoints) > 1:
+            pygame.draw.lines(screen, colors[i], False, pathpoints, 3)
+    text1 = font.render("Speed: %.2f Motor:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.airspeed, ship.motor_force, math.degrees(ship.angular_freq), ship.position.x, ship.position.y), 1, (255,255,255))
+    text2 = font.render("GAME ROUND:%d, STEP:%d"%(GAME_ROUND, STEP), 1, (255,255,0))
 
-        text1 = font.render("Speed: %.2f Motor:%.2f Turn:%.2f Pos: (%d,%d)"%(ship.airspeed, ship.motor_force, math.degrees(ship.angular_freq), ship.position.x, ship.position.y), 1, (255,255,255))
-        text2 = font.render("GAME ROUND:%d, STEP:%d"%(GAME_ROUND, STEP), 1, (255,255,0))
-
-        screen.blit(text1, (250,5))
-        screen.blit(text2, (250,25))
-        if flip:
-            pygame.display.flip()
-        #print airship_rot.
+    screen.blit(text1, (250,5))
+    screen.blit(text2, (250,25))
+    if flip:
+        pygame.display.flip()
+    #print airship_rot.
 
 def draw_strategy(themap):
     # draws arrow showing wind direciton
@@ -74,15 +77,18 @@ def draw_strategy(themap):
 
 
 world_map = Map("dublin.jpg", "windarrow.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
-airship = Airship('airship.png', 'shadow.png', position=world_map.position)
+airship1 = Airship('airship.png', 'shadow.png', position=world_map.position)
+airship2 = Airship('airship.png', 'shadow.png', position=world_map.position+Vector(0,100))
+airship3 = Airship('airship.png', 'shadow.png', position=world_map.position-Vector(0,100))
+vessels = [airship1, airship2, airship3]
+
 font = pygame.font.Font(None, 36)
 blips = []
 mapcenter = MAP_CENTER
 #delta_pos = Vector(0,0)
 GAME_ROUND = 0
 STEP = 0
-orig_pos = airship.position
-draw_action(screen, [airship], blips)
+draw_action(screen, vessels)
 
 
 # GUI stuff
@@ -94,9 +100,9 @@ c.add(ordercontrol,0,0)
 app.init(c)
 print "lappskojs"
 
+t=0
+
 while 1:
-
-
     winddeg = world_map.change_wind()
     #print math.degrees(new_wind)
     module_logger.debug(math.degrees(winddeg))
@@ -105,6 +111,7 @@ while 1:
     #print "Heading:", airship.heading
 
     # Order giving GUI loop
+
     while not ordercontrol.done:
         for e in pygame.event.get():
             if e.type is QUIT:
@@ -118,9 +125,9 @@ while 1:
 
     ordercontrol.done = False
     module_logger.debug(form.items())
-    airship.give_order(Order(motor=form["speed1"].value, turn=form["turn1"].value))
-    airship.give_order(Order(motor=form["speed2"].value, turn=form["turn2"].value))
-    airship.give_order(Order(motor=form["speed3"].value, turn=form["turn3"].value))
+    vessels[0].give_order(Order(motor=form["speed1"].value, turn=form["turn1"].value))
+    vessels[1].give_order(Order(motor=form["speed2"].value, turn=form["turn2"].value))
+    vessels[2].give_order(Order(motor=form["speed3"].value, turn=form["turn3"].value))
 
 
     #### This is the user input loop
@@ -169,15 +176,10 @@ while 1:
 
     #### And below is the "realtime" part
 
-    blips = []
-    STEP=0
-    #for i,t in enumerate(xrange(FRAMES_PER_SECOND*TURNTIME)):   # 100 ticks == 3 s
-    i=t=0
-    #clicked = False
-
-    while airship.carry_out_order():
-        STEP += 1
-        for i in range(TURNTIME * FRAMES_PER_SECOND):
+    for i in range(TURNTIME * FRAMES_PER_SECOND):
+        for airship in vessels:
+            if i==0:
+                airship.carry_out_order()
 
             airship.update(1./FRAMES_PER_SECOND, world_map.get_wind_vector())
 
@@ -187,8 +189,7 @@ while 1:
             #airship.turn(1./FRAMES_PER_SECOND)
 
             # add some markers each second, to show the ships movement
-            if i%FRAMES_PER_SECOND == 0:
-                blips.append((airship.position, STEP))
+
 
             # check if we need to scroll the background
             ship_screen_pos = world_map.get_screen_coords(airship.position)
@@ -207,18 +208,18 @@ while 1:
                 #print "Y-"
                 world_map.position.y += ship_screen_pos.y - SHEIGHT * d
 
-            # update the screen
-            draw_action(screen, [airship], blips)
+        # update the screen
+        draw_action(screen, vessels)
 
-            # move the time forward by one "tick"
-            clock.tick(FRAMES_PER_SECOND)
-            t += 1/FRAMES_PER_SECOND
+        # move the time forward by one "tick"
+        clock.tick(FRAMES_PER_SECOND)
+        t += 1/FRAMES_PER_SECOND
 
 
-            # Check if the user has clicked a mousebutton...
-            # for event in pygame.event.get():
-            #     if event.type == MOUSEBUTTONDOWN:
-            #         clicked = True
+        # Check if the user has clicked a mousebutton...
+        # for event in pygame.event.get():
+        #     if event.type == MOUSEBUTTONDOWN:
+        #         clicked = True
 
 
     #delta_pos = airship.position - orig_pos
