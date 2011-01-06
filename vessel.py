@@ -1,9 +1,9 @@
 import math
 import pygame
-from PIL import Image, ImageChops
 
 from vector import Vector
 try:
+    from PIL import Image, ImageChops
     import lighting
 except ImportError:
     PIL_AVAILABLE = False
