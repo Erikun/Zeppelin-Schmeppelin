@@ -1,5 +1,5 @@
 from math import pi
-from SPIL import Image,  ImageFilter, ImageMath, ImageChops
+from PIL import Image,  ImageFilter, ImageMath, ImageChops
 from random import random
 
 hs = [
