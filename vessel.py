@@ -27,6 +27,8 @@ class Airship(pygame.sprite.Sprite):
         lightmaps = []
         for i in range(10):
             lightmaps.append(lighting.get_lighting_overlay(bumpmap, i*math.pi/10))
+            #lightmaps[-1].show()
+
 
     def __init__(self, image, shadowimage, position=Vector(0,0), heading=0,
                  airspeed=0, acceleration=0, angular_freq=0, motor=0, torque=0):
@@ -66,10 +68,10 @@ class Airship(pygame.sprite.Sprite):
         sun_direction = math.pi*0.75
         lighting_direction = self.sanitize_angle(self.heading+sun_direction)
         h = int(lighting_direction/(2*math.pi)*len(self.lightmaps*2))
-        if 0 <= h < 10:
+        if 0 <= h < len(self.lightmaps):
             lm = self.lightmaps[h]
         else:
-            lm = self.lightmaps[10-h].transpose(Image.FLIP_TOP_BOTTOM)
+            lm = self.lightmaps[2*len(self.lightmaps)-h-1].transpose(Image.FLIP_TOP_BOTTOM)
         im = Image.fromstring("RGBA", self.image.get_size(), pygame.image.tostring(self.image, "RGBA"))
         img = im.convert("L")
         limg = ImageChops.multiply(img, lm).convert("RGBA")

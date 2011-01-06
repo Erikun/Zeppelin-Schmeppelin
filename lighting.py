@@ -71,7 +71,7 @@ def get_emboss_kernel(azimuth, elevation):
 def get_lighting_overlay(bumpmap, azimuth):
     azimuth = pi-azimuth
     ha = get_emboss_kernel(azimuth, 0.03)
-    ImageFilter.EMBOSS.filterargs=((3, 3), 0.15, 200, reduce(lambda x, y: x+y, ha))
+    ImageFilter.EMBOSS.filterargs=((3, 3), 0.15, 150, reduce(lambda x, y: x+y, ha))
 
     im = bumpmap.convert("L")
     #im = 255*((1-(1-im/255)**2))   # convert linear to spherical gradient

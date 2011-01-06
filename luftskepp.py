@@ -54,7 +54,7 @@ def draw_action(screen, ships, flip=True):
         screen.blit(airship_surf[0], (world_map.get_screen_coords(ship.position)-img_size/2).tuple())
 
         pathpoints=[]
-        for j, b in enumerate(ship.history[-min(len(ship.history),100)::10]):
+        for j, b in enumerate(ship.history[-min(len(ship.history),1000)::10]):
             blip_pos = world_map.get_screen_coords(b)
             pathpoints.append(blip_pos.tuple())
             #pygame.draw.circle(screen, colors[i//3-1], map(int, blip_pos.tuple()), 3)
