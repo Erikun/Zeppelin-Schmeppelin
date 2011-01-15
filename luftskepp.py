@@ -77,9 +77,9 @@ def draw_strategy(themap):
 
 
 world_map = Map("dublin.jpg", "windarrow.png", (1,1), windspeed=0.1, wind_direction=2*math.pi*random())
-airship1 = Airship('airship.png', 'shadow.png', position=world_map.position)
-airship2 = Airship('airship.png', 'shadow.png', position=world_map.position+Vector(0,100))
-airship3 = Airship('airship.png', 'shadow.png', position=world_map.position-Vector(0,100))
+airship1 = Airship('airship.png', position=world_map.position)
+airship2 = Airship('Flecheairship.png', position=world_map.position+Vector(0,100))
+airship3 = Airship('Vleermuisairship.png', position=world_map.position-Vector(0,100))
 vessels = [airship1, airship2, airship3]
 
 font = pygame.font.Font(None, 36)

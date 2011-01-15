@@ -2,13 +2,14 @@ import math
 import pygame
 
 from vector import Vector
+from util import sanitize_angle, get_pil_image
 try:
-    from PIL import Image, ImageChops
+    from PIL import Image, ImageChops, ImageFilter, ImageMath
     import lighting
 except ImportError:
     PIL_AVAILABLE = False
 else:
-    PIL_AVAILABLE=True
+    PIL_AVAILABLE=False
 
 class Order(object):
     """
@@ -30,10 +31,10 @@ class Airship(pygame.sprite.Sprite):
             #lightmaps[-1].show()
 
 
-    def __init__(self, image, shadowimage, position=Vector(0,0), heading=0,
+    def __init__(self, image, position=Vector(0,0), heading=0,
                  airspeed=0, acceleration=0, angular_freq=0, motor=0, torque=0):
         self.image = pygame.image.load(image)
-        self.shadowimage = pygame.image.load(shadowimage)
+        self.shadowimage = self.create_shadow(darkness=0.75)
         self.position = position
         self.heading = heading       # rad
         self.airspeed = airspeed     # m/s
@@ -54,29 +55,37 @@ class Airship(pygame.sprite.Sprite):
         self.history = []
 
 
-    def sanitize_angle(self, angle):
-        # keeps an angle between 0 and 2 pi.
-        if  angle > 2*math.pi:
-            return angle - 2*math.pi
-        elif angle < 0:
-            return 2*math.pi + angle
-        else:
-            return angle
-
 
     def apply_lightmap(self):
         sun_direction = math.pi*0.75
-        lighting_direction = self.sanitize_angle(self.heading+sun_direction)
+        lighting_direction = sanitize_angle(self.heading+sun_direction)
+
+        # figure out which one of the prerendered lightmaps to use
         h = int(lighting_direction/(2*math.pi)*len(self.lightmaps*2))
         if 0 <= h < len(self.lightmaps):
             lm = self.lightmaps[h]
         else:
             lm = self.lightmaps[2*len(self.lightmaps)-h-1].transpose(Image.FLIP_TOP_BOTTOM)
-        im = Image.fromstring("RGBA", self.image.get_size(), pygame.image.tostring(self.image, "RGBA"))
+
+        im = get_pil_image(self.image)
         img = im.convert("L")
+
+        # apply lightmap
         limg = ImageChops.multiply(img, lm).convert("RGBA")
         limg.putalpha(im.split()[-1])
+
         return pygame.image.frombuffer(limg.tostring(), self.image.get_size(), "RGBA")
+
+    def create_shadow(self, scale=1.0, darkness=1.0, iters=5):
+        im = get_pil_image(self.image)
+        shalpha = im.split()[-1].convert("L")
+        for i in range(iters):
+            shalpha = shalpha.filter(ImageFilter.BLUR)
+        shalpha=Image.eval(shalpha, lambda x:x*darkness)
+        shimg=Image.new("RGBA", self.image.get_size())
+        #shimg=shimg.convert("RGBA")
+        shimg.putalpha(shalpha)
+        return pygame.image.frombuffer(shimg.tostring(), self.image.get_size(), "RGBA")
 
     def get_surface(self, scale):
         """
@@ -139,7 +148,7 @@ class Airship(pygame.sprite.Sprite):
 
     def turn(self, t):
         # turn the ship according to its rotation
-        self.heading = self.sanitize_angle(self.heading+self.angular_freq*t)
+        self.heading = sanitize_angle(self.heading+self.angular_freq*t)
 
     def get_position_tuple(self):
         return (self.position.x, self.position.y)
